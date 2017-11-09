@@ -1,0 +1,144 @@
+     1                                  
+     2                                  
+     3                                  ;
+     4                                  ; file: memory.asm
+     5                                  ; This program illustrates how to use the string instructions
+     6                                  
+     7                                  global asm_copy, asm_find, asm_strlen, asm_strcpy
+     8                                  
+     9                                  segment .text
+    10                                  ; function asm_copy
+    11                                  ; copies blocks of memory
+    12                                  ; C prototype
+    13                                  ; void asm_copy( void * dest, const void * src, unsigned sz);
+    14                                  ; parameters:
+    15                                  ;   dest - pointer to buffer to copy to
+    16                                  ;   src  - pointer to buffer to copy from
+    17                                  ;   sz   - number of bytes to copy
+    18                                  
+    19                                  ; next, some helpful symbols are defined
+    20                                  
+    21                                  %define dest [ebp+8]
+    22                                  %define src  [ebp+12]
+    23                                  %define sz   [ebp+16]
+    24                                  asm_copy:
+    25 00000000 C8000000                        enter   0, 0
+    26 00000004 56                              push    esi
+    27 00000005 57                              push    edi
+    28                                  
+    29 00000006 8B750C                          mov     esi, src         ; esi = address of buffer to copy from
+    30 00000009 8B7D08                          mov     edi, dest        ; edi = address of buffer to copy to
+    31 0000000C 8B4D10                          mov     ecx, sz          ; ecx = number of bytes to copy
+    32                                  
+    33 0000000F FC                              cld                     ; clear direction flag 
+    34 00000010 F3A4                            rep     movsb           ; execute movsb ECX times
+    35                                  
+    36 00000012 5F                              pop     edi
+    37 00000013 5E                              pop     esi
+    38 00000014 C9                              leave
+    39 00000015 C3                              ret
+    40                                  
+    41                                  
+    42                                  ; function asm_find
+    43                                  ; searches memory for a given byte
+    44                                  ; void * asm_find( const void * src, char target, unsigned sz);
+    45                                  ; parameters:
+    46                                  ;   src    - pointer to buffer to search
+    47                                  ;   target - byte value to search for
+    48                                  ;   sz     - number of bytes in buffer
+    49                                  ; return value:
+    50                                  ;   if target is found, pointer to first occurrence of target in buffer
+    51                                  ;   is returned
+    52                                  ;   else
+    53                                  ;     NULL is returned
+    54                                  ; NOTE: target is a byte value, but is pushed on stack as a dword value.
+    55                                  ;       The byte value is stored in the lower 8-bits.
+    56                                  ; 
+    57                                  %define src    [ebp+8]
+    58                                  %define target [ebp+12]
+    59                                  %define sz     [ebp+16]
+    60                                  
+    61                                  asm_find:
+    62 00000016 C8000000                        enter   0,0
+    63 0000001A 57                              push    edi
+    64                                  
+    65 0000001B 8B450C                          mov     eax, target      ; al has value to search for
+    66 0000001E 8B7D08                          mov     edi, src
+    67 00000021 8B4D10                          mov     ecx, sz
+    68 00000024 FC                              cld
+    69                                  
+    70 00000025 F2AE                            repne   scasb           ; scan until ECX == 0 or [ES:EDI] == AL
+    71                                  
+    72 00000027 7407                            je      found_it        ; if zero flag set, then found value
+    73 00000029 B800000000                      mov     eax, 0          ; if not found, return NULL pointer
+    74 0000002E EB03                            jmp     short quit
+    75                                  found_it:
+    76 00000030 89F8                            mov     eax, edi          
+    77 00000032 48                              dec     eax              ; if found return (DI - 1)
+    78                                  quit:
+    79 00000033 5F                              pop     edi
+    80 00000034 C9                              leave
+    81 00000035 C3                              ret
+    82                                  
+    83                                  
+    84                                  ; function asm_strlen
+    85                                  ; returns the size of a string
+    86                                  ; unsigned asm_strlen( const char * );
+    87                                  ; parameter:
+    88                                  ;   src - pointer to string
+    89                                  ; return value:
+    90                                  ;   number of chars in string (not counting, ending 0) (in EAX)
+    91                                  
+    92                                  %define src [ebp + 8]
+    93                                  asm_strlen:
+    94 00000036 C8000000                        enter   0,0
+    95 0000003A 57                              push    edi
+    96                                  
+    97 0000003B 8B7D08                          mov     edi, src        ; edi = pointer to string
+    98 0000003E B9FFFFFFFF                      mov     ecx, 0FFFFFFFFh ; use largest possible ECX
+    99 00000043 30C0                            xor     al,al           ; al = 0
+   100 00000045 FC                              cld
+   101                                  
+   102 00000046 F2AE                            repnz   scasb           ; scan for terminating 0
+   103                                  
+   104                                  ;
+   105                                  ; repnz will go one step too far, so length is FFFFFFFE - ECX,
+   106                                  ; not FFFFFFFF - ECX
+   107                                  ;
+   108 00000048 B8FEFFFFFF                      mov     eax,0FFFFFFFEh
+   109 0000004D 29C8                            sub     eax, ecx          ; length = 0FFFFFFFEh - ecx
+   110                                  
+   111 0000004F 5F                              pop     edi
+   112 00000050 C9                              leave
+   113 00000051 C3                              ret
+   114                                  
+   115                                  ; function asm_strcpy
+   116                                  ; copies a string
+   117                                  ; void asm_strcpy( char * dest, const char * src);
+   118                                  ; parameters:
+   119                                  ;   dest - pointer to string to copy to
+   120                                  ;   src  - pointer to string to copy from
+   121                                  ; 
+   122                                  %define dest [ebp + 8]
+   123                                  %define src  [ebp + 12]
+   124                                  asm_strcpy:
+   125 00000052 C8000000                        enter   0,0
+   126 00000056 56                              push    esi
+   127 00000057 57                              push    edi
+   128                                  
+   129 00000058 8B7D08                          mov     edi, dest
+   130 0000005B 8B750C                          mov     esi, src
+   131 0000005E FC                              cld
+   132                                  cpy_loop:
+   133 0000005F AC                              lodsb                   ; load AL & inc si
+   134 00000060 AA                              stosb                   ; store AL & inc di
+   135 00000061 08C0                            or      al, al          ; set condition flags
+   136 00000063 75FA                            jnz     cpy_loop        ; if not past terminating 0, continue
+   137                                  
+   138 00000065 5F                              pop     edi
+   139 00000066 5E                              pop     esi
+   140 00000067 C9                              leave
+   141 00000068 C3                              ret
+   142                                  
+   143                                  
+   144                                  
