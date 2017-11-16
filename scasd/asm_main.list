@@ -1,0 +1,77 @@
+     1                                  %include "asm_io.inc"
+     2                              <1> 	extern  read_int, print_int, print_string
+     3                              <1> 	extern	read_char, print_char, print_nl
+     4                              <1> 	extern  sub_dump_regs, sub_dump_mem, sub_dump_math, sub_dump_stack
+     5                              <1> 
+     6                              <1> %macro 	dump_regs 1
+     7                              <1> 	push	  dword %1
+     8                              <1> 	call	  sub_dump_regs
+     9                              <1> %endmacro
+    10                              <1> 
+    11                              <1> 
+    12                              <1> ;
+    13                              <1> ; usage: dump_mem label, start-address, # paragraphs
+    14                              <1> %macro  dump_mem 3
+    15                              <1> 	push	 dword %1
+    16                              <1> 	push	 dword %2
+    17                              <1> 	push	 dword %3
+    18                              <1> 	call	 sub_dump_mem
+    19                              <1> %endmacro
+    20                              <1> 
+    21                              <1> %macro	dump_math 1
+    22                              <1> 	push	 dword %1
+    23                              <1> 	call	 sub_dump_math
+    24                              <1> %endmacro
+    25                              <1> 
+    26                              <1> %macro  dump_stack 3
+    27                              <1> 	push	 dword %3
+    28                              <1>         push     dword %2
+    29                              <1> 	push	 dword %1
+    30                              <1>         call     sub_dump_stack
+    31                              <1> %endmacro
+    32                                  ;
+    33                                  ; file: array1.asm
+    34                                  ; This program demonstrates arrays in assembly
+    35                                  ;
+    36                                  ; To create executable:
+    37                                  ; nasm -f coff array1.asm
+    38                                  ; gcc -o array1 array1.o array1c.c
+    39                                  ;
+    40                                  
+    41                                  segment .data
+    42                                  
+    43                                  segment .bss
+    44 00000000 <res 00000190>          array        resd 100
+    45                                  segment .text
+    46                                          global  asm_main
+    47                                  asm_main:
+    48 00000000 C8000000                        enter   0,0       
+    49 00000004 FC                            cld
+    50 00000005 BF[00000000]                  mov    edi, array
+    51 0000000A B964000000                    mov    ecx, 100
+    52 0000000F B80C000000                    mov    eax, 12
+    53                                  fill: 
+    54 00000014 890C8D[00000000]              mov [array+4*ecx],ecx
+    55 0000001B E2F7                          loop fill
+    56                                  
+    57 0000001D B964000000                    mov    ecx, 100
+    58                                  lp:
+    59 00000022 AF                      	  scasd
+    60 00000023 7404                    	  je found
+    61                                  ; pointer to start of array
+    62                                  ; number of elements
+    63                                  ; number to scan for
+    64 00000025 E2FB                    loop   lp
+    65                                   ; code to perform if not found
+    66 00000027 EB0F                          jmp    onward
+    67                                  found:
+    68 00000029 83EF04                        sub    edi, 4         ; edi now points to 12 in array
+    69 0000002C 89C8                          mov   eax,ecx
+    70 0000002E E8(00000000)                  call  print_int
+    71 00000033 E8(00000000)                  call  print_nl
+    72                                   ; code to perform if found
+    73                                  onward:
+    74 00000038 B800000000                      mov     eax, 0            ; return back to C
+    75 0000003D C9                              leave                     
+    76 0000003E C3                              ret
+    77                                  
