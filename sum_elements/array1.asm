@@ -1,3 +1,5 @@
+
+
 ;
 ; file: array1.asm
 ; This program demonstrates arrays in assembly
@@ -16,7 +18,6 @@ Prompt          db   "Enter index of element to display: ", 0
 SecondMsg       db   "Element %d is %d", NEW_LINE, 0
 ThirdMsg        db   "Elements 20 through 29 of array", 0
 InputFormat     db   "%d", 0
-ValueFromScanf  db   "The value is %d",NEW_LINE,0
 
 segment .bss
 array           resd ARRAY_SIZE
@@ -27,10 +28,9 @@ segment .text
         extern  puts, printf, scanf, dump_line
         global  asm_main
 asm_main:
-        enter   8,0             ; local dword variable at EBP - 4
+        enter   4,0             ; local dword variable at EBP - 4
         push    ebx
         push    esi
-
 
 ; initialize array to 100, 99, 98, 97, ...
 
@@ -42,8 +42,8 @@ init_loop:
         loop    init_loop
 
         push    dword FirstMsg       ; print out elements 20-29
-        call    puts                 ; print out FirstMsg
-        add     esp, 4
+        call    puts           ; print out FirstMsg
+        pop     ecx
 
         push    dword 10
         push    dword array
@@ -55,27 +55,20 @@ Prompt_loop:
         push    dword Prompt
         call    printf
         pop     ecx
-        lea     eax, [ebp-8]      ; eax = address of local dword
+
+        lea     eax, [ebp-4]      ; eax = address of local dword
         push    eax
         push    dword InputFormat
         call    scanf
-b1:
-        mov     ebx,eax
-        push    dword [ebp-8]
-        push    dword ValueFromScanf 
-        call    printf
-        add     esp, 8
-        mov     eax,ebx
-b2:
-
         add     esp, 8
         cmp     eax, 1               ; eax = return value of scanf
         je      InputOK
 
-        call    dump_line            ; dump rest of line and start over
+        call    dump_line  ; dump rest of line and start over
         jmp     Prompt_loop          ; if input invalid
+
 InputOK:
-        mov     esi, [ebp-8]
+        mov     esi, [ebp-4]
         push    dword [array + 4*esi]
         push    esi
         push    dword SecondMsg      ; print out value of element

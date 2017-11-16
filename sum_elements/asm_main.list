@@ -1,0 +1,38 @@
+     1                                  
+     2                                  
+     3                                  ;
+     4                                  ; file: array1.asm
+     5                                  ; This program demonstrates arrays in assembly
+     6                                  ;
+     7                                  ; To create executable:
+     8                                  ; nasm -f coff array1.asm
+     9                                  ; gcc -o array1 array1.o array1c.c
+    10                                  ;
+    11                                  
+    12                                  %define ARRAY_SIZE 100
+    13                                  %define NEW_LINE 10
+    14                                  
+    15                                  segment .data
+    16                                  
+    17 00000000 0504030201              array1  db  5,4,3,2,1 ; array of bytes
+    18 00000005 050004000300020001-     array2  dw  5,4,3,2,1 ; array of words
+    19 0000000E 00                 
+    20                                  
+    21                                  segment .bss
+    22                                  
+    23                                   
+    24                                  
+    25                                  segment .text
+    26                                          global  asm_main
+    27                                  asm_main:
+    28 00000000 C8000000                        enter   0,0       
+    29                                  
+    30 00000004 31C0                            xor eax,eax 
+    31 00000006 BB[00000000]                    mov ebx,array1
+    32 0000000B 66BA0000                        mov dx,0
+    33                                  b1:
+    34                                          ;mov [array1 + 3],al
+    35 0000000F B800000000                      mov     eax, 0            ; return back to C
+    36 00000014 C9                              leave                     
+    37 00000015 C3                              ret
+    38                                  

@@ -1,0 +1,77 @@
+     1                                  %include "asm_io.inc"
+     2                              <1> 	extern  read_int, print_int, print_string
+     3                              <1> 	extern	read_char, print_char, print_nl
+     4                              <1> 	extern  sub_dump_regs, sub_dump_mem, sub_dump_math, sub_dump_stack
+     5                              <1> 
+     6                              <1> %macro 	dump_regs 1
+     7                              <1> 	push	  dword %1
+     8                              <1> 	call	  sub_dump_regs
+     9                              <1> %endmacro
+    10                              <1> 
+    11                              <1> 
+    12                              <1> ;
+    13                              <1> ; usage: dump_mem label, start-address, # paragraphs
+    14                              <1> %macro  dump_mem 3
+    15                              <1> 	push	 dword %1
+    16                              <1> 	push	 dword %2
+    17                              <1> 	push	 dword %3
+    18                              <1> 	call	 sub_dump_mem
+    19                              <1> %endmacro
+    20                              <1> 
+    21                              <1> %macro	dump_math 1
+    22                              <1> 	push	 dword %1
+    23                              <1> 	call	 sub_dump_math
+    24                              <1> %endmacro
+    25                              <1> 
+    26                              <1> %macro  dump_stack 3
+    27                              <1> 	push	 dword %3
+    28                              <1>         push     dword %2
+    29                              <1> 	push	 dword %1
+    30                              <1>         call     sub_dump_stack
+    31                              <1> %endmacro
+    32                                  ;
+    33                                  ; file: array1.asm
+    34                                  ; This program demonstrates arrays in assembly
+    35                                  ;
+    36                                  ; To create executable:
+    37                                  ; nasm -f coff array1.asm
+    38                                  ; gcc -o array1 array1.o array1c.c
+    39                                  ;
+    40                                  
+    41                                  segment .data
+    42 00000000 010000000200000003-     array1 dd 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
+    43 00000009 000000040000000500-
+    44 00000012 000006000000070000-
+    45 0000001B 000800000009000000-
+    46 00000024 0A000000           
+    47 00000028 546869732069732073-     string1 db "This is some junk data",0
+    48 00000031 6F6D65206A756E6B20-
+    49 0000003A 6461746100         
+    50                                  
+    51                                  segment .bss
+    52 00000000 <res 00000028>          array2 resd 10
+    53                                  
+    54                                  
+    55                                  segment .text
+    56                                          global  asm_main
+    57                                  asm_main:
+    58 00000000 C8000000                        enter   0,0       
+    59 00000004 FC                              cld ; don’t forget this!
+    60 00000005 BE[00000000]                    mov esi, array1
+    61 0000000A BF[00000000]                    mov edi, array2
+    62 0000000F B90A000000                      mov ecx, 10
+    63                                  lp:
+    64 00000014 AD                              lodsd
+    65 00000015 AB                              stosd
+    66 00000016 E2FC                            loop lp
+    67                                  
+    68 00000018 B90A000000                      mov ecx,10
+    69 0000001D BF[28000000]                    mov edi, string1
+    70 00000022 31C0                            xor eax,eax
+    71 00000024 B058                            mov al,'X'
+    72 00000026 F3AA                            rep stosb
+    73                                  b1:
+    74 00000028 B800000000                      mov     eax, 0            ; return back to C
+    75 0000002D C9                              leave                     
+    76 0000002E C3                              ret
+    77                                  
